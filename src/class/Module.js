@@ -7,7 +7,7 @@ const { flatten } = require('pure-utilities/collection')
 
 class Module extends AbstractSyntaxTree {
   convert () {
-    if (this.has('ImportDeclaration')) {
+    if (this.has('ImportDeclaration') || this.has('ImportExpression')) {
       this.convertCodeWithImportDeclarations()
     } else if (this.has('ExportDefaultDeclaration')) {
       this.convertExportDefaultDeclarationToDefine()
@@ -18,6 +18,10 @@ class Module extends AbstractSyntaxTree {
 
   convertCodeWithImportDeclarations () {
     var pairs = this.getDependencyPairs()
+    if (this.has('ImportExpression')) {
+      pairs.unshift({ element: 'require', param: 'require' })
+      this.convertImportExpressions()
+    }
     this.remove({ type: 'ImportDeclaration' })
     this.normalizePairs(pairs)
     if (this.has('ExportDefaultDeclaration')) {
@@ -88,6 +92,20 @@ class Module extends AbstractSyntaxTree {
       element: node.source.value,
       param: specifier.local.name
     }
+  }
+
+  convertImportExpressions () {
+    this.replace(node => {
+      if (node.type !== 'ImportExpression') {
+        return node
+      }
+      var resolve = { type: 'Identifier', name: 'resolve' }
+      return this.getNewExpression('Promise', [
+        this.getFunctionExpression([resolve], [
+          this.getCallExpression('require', [this.getArrayExpression([node.source]), resolve])
+        ])
+      ])
+    })
   }
 
   convertExportNamedDeclarations () {
@@ -161,6 +179,22 @@ class Module extends AbstractSyntaxTree {
         type: 'BlockStatement',
         body: body
       }
+    }
+  }
+
+  getNewExpression (name, args) {
+    return {
+      type: 'NewExpression',
+      callee: { type: 'Identifier', name: name },
+      arguments: args
+    }
+  }
+
+  getCallExpression (name, args) {
+    return {
+      type: 'CallExpression',
+      callee: { type: 'Identifier', name: name },
+      arguments: args
     }
   }
 
