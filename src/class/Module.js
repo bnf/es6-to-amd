@@ -102,9 +102,54 @@ class Module extends AbstractSyntaxTree {
       }
       var resolve = { type: 'Identifier', name: 'resolve' }
       var reject = { type: 'Identifier', name: 'reject' }
+      var defaultIdentifier = { type: 'Identifier', name: 'default' }
+      var value = { type: 'Identifier', name: 'value' }
+      var module = { type: 'Identifier', name: 'module' }
       return this.getNewExpression('Promise', [
         this.getFunctionExpression([resolve, reject], [
-          this.getCallExpression('require', [this.getArrayExpression([node.source]), resolve, reject])
+          this.getCallExpression('require', [
+            this.getArrayExpression([node.source]),
+            this.getFunctionExpression([module], [
+              this.getCallExpression('resolve', [
+                this.getConditionalExpression(
+                  this.getBinaryExpression(this.getTypeof(module), '===', { type: 'Literal', value: 'object' }),
+                  this.getCallExpression(this.getMemberExpression('Object', 'defineProperty'), [
+                    module,
+                    { type: 'Literal', value: 'default' },
+                    {
+                      type: 'ObjectExpression',
+                      properties: [
+                        {
+                          type: 'Property',
+                          key: value,
+                          value: module,
+                          kind: 'init'
+                        },
+                        {
+                          type: 'Property',
+                          key: { type: 'Identifier', name: 'enumerable' },
+                          value: { type: 'Literal', value: false },
+                          kind: 'init'
+                        }
+                      ]
+                    }
+                  ]),
+                  {
+                    type: 'ObjectExpression',
+                    properties: [
+                      {
+                        type: 'Property',
+                        key: defaultIdentifier,
+                        value: module,
+                        kind: 'init'
+                      }
+                    ]
+                  }
+                )
+              ])
+            ]),
+            reject
+          ])
         ])
       ])
     })
@@ -195,8 +240,49 @@ class Module extends AbstractSyntaxTree {
   getCallExpression (name, args) {
     return {
       type: 'CallExpression',
-      callee: { type: 'Identifier', name: name },
+      callee: typeof name === 'string' ? { type: 'Identifier', name: name } : name,
       arguments: args
+    }
+  }
+
+  getMemberExpression(object, member) {
+    return {
+      type: 'MemberExpression',
+      object: {
+        type: 'Identifier',
+        name: object
+      },
+      property: {
+        type: 'Identifier',
+        name: member
+      }
+    }
+  }
+
+  getConditionalExpression(test, consequent, alternate) {
+    return {
+      type: 'ConditionalExpression',
+      test: test,
+      consequent: consequent,
+      alternate: alternate
+    }
+  }
+
+  getBinaryExpression(left, operator, right) {
+    return {
+      type: 'BinaryExpression',
+      left: left,
+      operator: operator,
+      right: right
+    }
+  }
+
+  getTypeof(argument) {
+    return {
+      type: 'UnaryExpression',
+      prefix: true,
+      operator: 'typeof',
+      argument: argument
     }
   }
 
