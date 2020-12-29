@@ -71,9 +71,7 @@ class Module extends AbstractSyntaxTree {
         if (specifier.type === 'ImportSpecifier') {
           var param
           var value = node.source.value
-          if (specifier.imported.name !== specifier.local.name) {
-            return this.getLocalSpecifier(node, specifier)
-          } else if (Object.prototype.hasOwnProperty.call(dependencyToIdentifierMap, value)) {
+          if (Object.prototype.hasOwnProperty.call(dependencyToIdentifierMap, value)) {
             param = dependencyToIdentifierMap[value]
           } else {
             var identifiers = unique(flatten(ids)).concat(Object.values(dependencyToIdentifierMap))
@@ -83,7 +81,8 @@ class Module extends AbstractSyntaxTree {
           return {
             param,
             element: node.source.value,
-            name: specifier.local.name
+            name: specifier.local.name,
+            member: specifier.imported.name
           }
         }
       }.bind(this))
@@ -340,7 +339,7 @@ class Module extends AbstractSyntaxTree {
       },
       property: {
         type: 'Identifier',
-        name: pair.name
+        name: pair.member
       }
     }
   }

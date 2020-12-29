@@ -59,6 +59,10 @@ test('it does convert object descructuring for multiple specifiers', t => {
   t.truthy(convert('two-destructuring-imports'))
 })
 
+test('it does convert object descructuring and mapping', t => {
+  t.truthy(convert('one-destructuring-mapping-import'))
+})
+
 test('it does generate free identifiers', t => {
   t.truthy(convert('two-different-destructuring-imports'))
 })

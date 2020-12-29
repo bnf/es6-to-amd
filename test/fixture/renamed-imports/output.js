@@ -1,4 +1,4 @@
-define(["foo"], function (bar) {
+define(["foo"], function (a) {
     "use strict";
-    bar();
+    a.foo();
 });
